@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>車麗屋迎賓導覽｜你的車輛秘書 CarGo</title>
+<style>
+:root{
+  --brand:#E50012; --ink:#0f172a; --muted:#475569; --line:#e5e7eb;
+  --bg:#ffffff; --soft:#fff1f2; --ok:#16a34a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
+a{color:var(--brand);text-decoration:none}
+.header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);}
+.headwrap{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
+.brand{display:flex;align-items:center;gap:10px}
+.dot{width:24px;height:24px;border-radius:8px;background:var(--brand)}
+.brand span{font-weight:900;color:var(--brand)}
+.btn{border:1px solid var(--brand);color:var(--brand);background:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:800}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.ghost{border-color:var(--line);color:#0f172a}
+.wrap{max-width:1000px;margin:0 auto;padding:16px}
+
+.global-steps{position:sticky; top:61px; z-index:24; background:#ffffff; border-bottom:2px solid var(--line);}
+.global-steps .wrap{max-width:1000px; margin:0 auto; padding:8px 16px;}
+.gs-row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+.steps{display:flex; flex-wrap:wrap; gap:6px;}
+.step{padding:8px 14px;border-radius:12px 12px 0 0;border:1px solid var(--line);border-bottom:none;color:#64748b;font-weight:700;background:#fff;cursor:pointer;user-select:none}
+.step.active{box-shadow:0 -2px 0 #E50012 inset, 0 1px 0 #ffffff inset;background:#fff;color:#E50012;border-color:#ffd6da}
+.step.done{background:#ecfdf5;color:#16a34a;border-color:#bbf7d0}
+.pager{color:#64748b}
+
+.topbar{background:#ffffff;border-bottom:1px solid var(--line)}
+.topwrap{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 16px}
+.toptext{color:#334155;line-height:1.7}
+.toptext strong{font-size:17px;font-weight:900}
+.toptext .sep{color:#E50012;margin:0 8px;font-weight:800}
+.toptext .desc{font-size:16px;color:#475569}
+@media (max-width: 600px){
+  .toptext{display:flex;flex-wrap:wrap;gap:4px;line-height:1.75}
+  .toptext .sep{flex-basis:100%;height:0;visibility:hidden}
+  .toptext .desc{font-size:15px}
+}
+
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 8px 20px rgba(0,0,0,.05)}
+.h1{font-size:26px;margin:0 0 6px 0}
+.lead{color:#334155;margin:0 0 10px 0;line-height:1.75}
+.kv{min-height:220px;border-radius:16px;background:linear-gradient(135deg,#fff7f8,#ffffff);box-shadow:0 8px 22px rgba(229,0,18,.08)}
+.section{display:grid;grid-template-columns: 1.2fr 1fr;gap:16px;margin-top:10px}
+@media (max-width: 900px){ .section{grid-template-columns:1fr}}
+.select{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+.label{font-size:12px;color:#64748b;margin-bottom:6px}
+select{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px}
+.list{list-style:none;margin:8px 0 0 0;padding:0}
+.list li{display:flex;gap:10px;margin:8px 0}
+.dot2{width:10px;height:10px;border-radius:50%;background:var(--brand);margin-top:7px}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--soft);color:var(--brand);font-weight:800;border:1px solid #ffd6da;font-size:12px}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px}
+.nav .btn{min-width:140px}
+@media (max-width: 540px){
+  .nav{flex-direction:column}
+  .nav .btn{width:100%;min-width:unset}
+}
+.note{ font-size:13px; color:#64748b; }
+
+/* Views as paginated panels */
+.view{display:none;opacity:0;transform:translateY(4px);}
+.view.show{display:block;animation:fadeIn .28s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:none}}
+
+.footer{color:#64748b;text-align:center;padding:20px 12px;margin-top:20px}
+
+
+
+/* v27: Single-row stepper with horizontal scroll on small screens */
+.steps{display:flex; flex-wrap:nowrap; gap:10px; overflow:hidden}
+.steps .step{flex:0 0 auto}
+@media (max-width: 900px){
+  .gs-row{align-items:flex-start}
+  .steps{overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:4px}
+  .steps::-webkit-scrollbar{display:none}
+}
+
+/* v28: remove right-side progress; left-align stepper */
+.gs-row{justify-content:flex-start !important}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="headwrap">
+<div class="brand"><span class="dot"></span><span>車麗屋 Car Quality</span></div>
+<div></div>
+</div>
+</div>
+<!-- Global stepper + progress -->
+<div aria-label="導覽步驟" class="global-steps" role="navigation">
+<div class="wrap">
+<div class="gs-row">
+<div class="steps" id="stepper" role="tablist">
+<div aria-controls="panel-step-1" class="step active" id="tab-step-1" role="tab" tabindex="0">1 歡迎</div>
+<div aria-controls="panel-step-2" class="step" id="tab-step-2" role="tab" tabindex="0">2 設定車型</div>
+<div aria-controls="panel-step-3" class="step" id="tab-step-3" role="tab" tabindex="0">3 會員權益</div>
+<div aria-controls="panel-step-4" class="step" id="tab-step-4" role="tab" tabindex="0">4 專屬服務</div>
+<div aria-controls="panel-step-5" class="step" id="tab-step-5" role="tab" tabindex="0">5 完成</div>
+</div>
+
+</div>
+</div>
+</div>
+<!-- Warm topbar -->
+<div aria-label="導覽提示" class="topbar" role="region">
+<div class="topwrap">
+<div class="toptext"><strong>嗨，我是你的車輛秘書 CarGo。</strong><span class="sep">｜</span><span class="desc">花 1 分鐘完成設定，我就會記住你的愛車，陪你一起守護每一次出發。</span></div>
+</div>
+</div>
+<div class="wrap">
+<!-- STEP 1 -->
+<section aria-labelledby="tab-step-1" class="view show" data-step="1" id="panel-step-1" role="tabpanel">
+<div class="section">
+<div class="card">
+<h3 class="title">準備好了嗎？</h3>
+<p class="lead">只需幾個小步驟，我會帶你完成設定；之後的內容都會依你的愛車顯示專屬商品。</p>
+</div>
+<div aria-hidden="true" class="kv card"></div>
+</div>
+<div class="nav">
+<div></div>
+<div><button class="btn primary" data-next="">下一步</button></div>
+</div>
+</section>
+<!-- STEP 2 -->
+<section aria-labelledby="tab-step-2" class="view" data-step="2" id="panel-step-2" role="tabpanel">
+<div class="section">
+<div class="card">
+<h3 class="title">設定車型</h3>
+<p class="lead">先幫我認識你的車：選好品牌、年份與車型，之後我會自動只顯示適配的商品與服務。</p>
+<div class="section" style="grid-template-columns: repeat(3,1fr)">
+<div class="select">
+<div class="label">品牌</div>
+<select id="brand"><option>TOYOTA</option><option>HONDA</option><option>BMW</option></select>
+</div>
+<div class="select">
+<div class="label">年份</div>
+<select id="year"><option>2025</option><option>2024</option><option>2023</option></select>
+</div>
+<div class="select">
+<div class="label">車型</div>
+<select id="model"><option>RAV4</option><option>Corolla Altis</option><option>Yaris Cross</option></select>
+</div>
+</div>
+<div class="note">有多台車也沒關係，可以一台台加入，我都會記住。</div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn" id="saveCar">儲存至我的車庫</button>
+<span class="lead" id="saveMsg" style="font-size:14px;color:#0f766e"></span>
+</div>
+<div class="banner" id="savedBanner" style="display:none;margin-top:10px;padding:10px;border:1px solid #bbf7d0;background:#ecfdf5;border-radius:12px;color:#065f46">已記住你的愛車！接下來看到的內容，會自動依照這台車量身整理。</div>
+</div>
+<div class="card"></div>
+</div>
+<div class="nav">
+<button class="btn ghost" data-prev="">上一步</button>
+<div><button class="btn primary" data-next="">下一步</button></div>
+</div>
+</section>
+<!-- STEP 3 -->
+<section aria-labelledby="tab-step-3" class="view" data-step="3" id="panel-step-3" role="tabpanel">
+<div class="section">
+<div class="card">
+<h3 class="title">會員權益</h3>
+<p class="lead">加入會員之後，每一次消費都算數；生日、會員日也有小驚喜。我會把重要提醒安排得剛剛好，不打擾、但不會錯過。</p>
+<p class="note">提示：點數最高可折抵單筆 50% 金額；詳細辦法可在會員專區查看。</p>
+<ul class="list">
+<li><span class="dot2"></span><div><b>點數累積與折抵</b>：每消費 1 元累積 1 點；點數可折抵消費，單筆最高可折抵 50%。</div></li>
+<li><span class="dot2"></span><div><b>會員價與會員日</b>：全台門市與官網皆享會員價；每月 10 號回饋加倍。</div></li>
+<li><span class="dot2"></span><div><b>生日專屬</b>：生日當月贈送優惠券或點數。</div></li>
+<li><span class="dot2"></span><div><b>專屬商品與活動</b>：指定商品享更高點數回饋；不定期會員限定活動。</div></li>
+<li><span class="dot2"></span><div><b>免費健檢</b>：預約享免費 18 項全車安全檢查。</div></li>
+<li><span class="dot2"></span><div><b>輪胎加值服務</b>：買 4 條輪胎送 3D 四輪定位；後續免費補胎、6 次對調與前輪平衡。</div></li>
+<li><span class="dot2"></span><div><b>全面電子化</b>：會員卡與優惠券電子化；保養紀錄線上查看。</div></li>
+<li><span class="dot2"></span><div><b>會員效期</b>：效期一年，可續費或期間消費滿額延長。</div></li>
+<li><span class="dot2"></span><div><b>適用範圍</b>：多數品項與促銷品可累點；與 HAPPYGO 聯名卡擇一累點；部分商品不適用 HAPPYGO 累點。</div></li>
+</ul>
+</div>
+<div class="card"></div>
+</div>
+<div class="nav">
+<button class="btn ghost" data-prev="">上一步</button>
+<div><button class="btn primary" data-next="">下一步</button></div>
+</div>
+</section>
+<!-- STEP 4 (UPDATED) -->
+<section aria-labelledby="tab-step-4" class="view" data-step="4" id="panel-step-4" role="tabpanel">
+<div class="section">
+<div class="card">
+<h3 class="title">你的專屬服務</h3>
+<p class="lead">接下來，我會依照你的車型與使用習慣，挑出真正適合的選項：高階、CP 值或經濟型，怎麼選都放心。</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<span class="badge">依車型配對</span>
+<span class="badge">AI 智慧推薦</span>
+<span class="badge">門市安裝預約</span>
+<span class="badge">到店取貨</span>
+</div>
+<ul class="list" style="margin-top:8px">
+<li><span class="dot2"></span><div><b>輪胎顧問</b>：依里程與駕駛習慣，提供濕地剎車／靜音／耐磨的平衡建議。</div></li>
+<li><span class="dot2"></span><div><b>保養提醒</b>：里程或時間到期前，我會提前提醒你並提供合適的預約時段。</div></li>
+<li><span class="dot2"></span><div><b>省心指南</b>：重要保養我幫你記，發票與紀錄也幫你放好（電子化一鍵查）。</div></li>
+</ul>
+</div>
+<div class="card"></div>
+</div>
+<div class="nav">
+<button class="btn ghost" data-prev="">上一步</button>
+<div><button class="btn primary" data-next="">下一步</button></div>
+</div>
+</section>
+<!-- STEP 5 -->
+<section aria-labelledby="tab-step-5" class="view" data-step="5" id="panel-step-5" role="tabpanel">
+<div class="section" style="grid-template-columns:1fr">
+<div class="card">
+<h3 class="title">完成！開始你的專屬體驗吧</h3>
+<p class="lead">恭喜完成導覽！你的車輛秘書已就位，接下來我會替你照顧愛車、提醒保養，也把適合你的優惠好好收藏起來。</p>
+<p class="note">需要我時叫我一聲就好，剩下的交給我。</p>
+<div id="summaryCard" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:center">
+<div style="width:36px;height:36px;border-radius:10px;background:#FFE4E7;display:flex;align-items:center;justify-content:center;font-weight:900;color:#E50012">🚗</div>
+<div style="flex:1">
+<div style="font-weight:800">你的設定一覽</div>
+<div id="summaryText" style="color:#475569;font-size:14px">尚未設定車型</div>
+</div>
+<button class="btn" id="editCarBtn">修改車型</button>
+</div>
+<div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+<div style="display:flex;gap:10px;align-items:center">
+<div style="width:36px;height:36px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-weight:900;color:#16a34a">🔔</div>
+<div>
+<div style="font-weight:800">接收優惠與保養提醒</div>
+<div style="color:#475569;font-size:13px">我會在合適的時點，以你偏好的方式通知你。</div>
+</div>
+</div>
+<label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+<input id="optIn" style="accent-color:#E50012" type="checkbox"/>
+<span style="font-size:14px;color:#334155">開啟</span>
+</label>
+</div>
+<div style="font-size:12px;color:#94a3b8;margin-top:6px">你可以隨時在會員專區－通知偏好中修改設定。</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+<button class="btn primary" id="ctaMember2">查看會員專區</button>
+<button class="btn" id="goTires2">看輪胎推薦</button>
+<button class="btn ghost" id="ctaStore">預約門市</button>
+<button class="btn ghost" id="ctaHome2">回首頁</button>
+</div>
+<div class="banner" id="doneBanner" style="display:block;margin-top:10px;padding:12px;border:1px solid #bbf7d0;background:#ecfdf5;border-radius:12px;color:#065f46">導覽已完成。祝你一路順心！</div>
+</div>
+</div>
+<div class="nav">
+<button class="btn ghost" data-prev="">上一步</button>
+<div><button class="btn primary" id="finish">結束導覽</button></div>
+</div>
+</section>
+<div class="footer">© 2025 車麗屋 Car Quality</div>
+</div>
+<script>
+let step = 1;
+const maxStep = 5;
+const $ = (sel, ctx=document)=>ctx.querySelector(sel);
+const $$ = (sel, ctx=document)=>Array.from(ctx.querySelectorAll(sel));
+const views = $$('[data-step]');
+const stepper = $('#stepper');
+
+
+function render(){
+  views.forEach(v=>v.classList.toggle('show', Number(v.dataset.step)===step));
+  const nodes = $$('.step', stepper);
+  nodes.forEach((n, i)=>{
+    n.classList.toggle('active', i+1===step);
+    n.classList.toggle('done', i+1<step);
+  });
+
+  localStorage.setItem('onboarding_step', String(step));
+  focusActiveTab();
+  setStepInURL(step);
+}
+function next(){ if(step<maxStep){ step++; render(); scrollToContent(); } }
+function prev(){ if(step>1){ step--; render(); scrollToContent(); } }
+
+// delegated events for next/prev
+document.addEventListener('click', (e)=>{
+  const t = e.target.closest('[data-next],[data-prev]');
+  if(!t) return;
+  e.preventDefault();
+  if(t.hasAttribute('data-next')){ next(); }
+  else if(t.hasAttribute('data-prev')){ prev(); }
+});
+
+// stepper click to jump
+stepper.addEventListener('click', (e)=>{
+  const tab = e.target.closest('.step');
+  if(!tab) return;
+  const idx = Array.from(stepper.children).indexOf(tab);
+  if(idx >= 0){
+    step = idx+1; render(); scrollToContent();
+  }
+});
+
+function focusActiveTab(){
+  const tabs = $$('.step', stepper);
+  const active = tabs[step-1];
+  tabs.forEach((t,i)=> t.setAttribute('aria-selected', i+1===step ? 'true':'false'));
+  if(active) active.focus({preventScroll:true});
+}
+function scrollToContent(){
+  const top = document.querySelector('.global-steps');
+  if(!top) return;
+  const y = top.getBoundingClientRect().bottom + window.scrollY;
+  window.scrollTo({ top: y, behavior: 'smooth' });
+}
+
+// Car save
+document.getElementById('saveCar')?.addEventListener('click', ()=>{
+  const brand = document.getElementById('brand').value;
+  const year = document.getElementById('year').value;
+  const model = document.getElementById('model').value;
+  const name = brand + ' ' + model + ' / ' + year;
+  localStorage.setItem('myCar', name);
+  document.getElementById('saveMsg').textContent = '已儲存：' + name;
+  const sb = document.getElementById('savedBanner'); if(sb) sb.style.display='block';
+});
+
+// Step 5 summary + opt-in
+(function(){
+  const sum = document.getElementById('summaryText');
+  if(sum){
+    const car = localStorage.getItem('myCar');
+    sum.textContent = car ? car : '尚未設定車型';
+  }
+  document.getElementById('editCarBtn')?.addEventListener('click', ()=>{ step = 2; render(); scrollToContent(); });
+  const optKey = 'notifyOptIn';
+  const opt = document.getElementById('optIn');
+  const saved = localStorage.getItem(optKey);
+  if(saved && opt){ opt.checked = saved === '1'; }
+  opt?.addEventListener('change', ()=>{
+    localStorage.setItem(optKey, opt.checked ? '1':'0');
+  });
+})();
+
+document.getElementById('finish')?.addEventListener('click', ()=>{
+  localStorage.setItem('watchedGuide','1');
+  alert('導覽完成，歡迎開始你的專屬體驗！');
+});
+
+// Share helpers
+function getStepFromURL(){
+  try{
+    const u = new URL(window.location.href);
+    const s = Number(u.searchParams.get('step')||u.hash.replace('#step=','')||'0');
+    if(Number.isFinite(s) && s>=1 && s<=maxStep) return s;
+  }catch(e){}
+  return 0;
+}
+function setStepInURL(n){
+  try{
+    const u = new URL(window.location.href);
+    u.searchParams.set('step', String(n));
+    history.replaceState(null, '', u.toString());
+  }catch(e){}
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg||'已複製連結';
+  t.classList.remove('show'); void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 1500);
+}
+
+// init
+(function(){
+  const fromURL = getStepFromURL();
+  const s = fromURL || Number(localStorage.getItem('onboarding_step')||'1');
+  step = Math.min(Math.max(1,s), maxStep);
+  render();
+})();
+</script>
+</body>
+</html>
